@@ -16,6 +16,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .api.client import MELCloudHomeClient
 from .api.exceptions import ApiError, AuthenticationError, ServiceUnavailableError
 from .api.models import AirToAirUnit, AirToWaterUnit, Building, UserContext
+from .api.parsing import parse_active_error_start
 from .const import (
     DOMAIN,
     UPDATE_INTERVAL,
@@ -104,6 +105,10 @@ class MELCloudHomeCoordinator(DataUpdateCoordinator[UserContext]):
         self._last_outdoor_temp_poll: dict[
             str, datetime
         ] = {}  # Per-unit last poll time
+
+        # Active error start times, fetched from errorlog when a unit
+        # enters error state (cleared when the error resolves)
+        self._error_started: dict[str, str] = {}
 
         # Initialize ATA control client
         self.control_client_ata = ATAControlClient(
@@ -247,9 +252,48 @@ class MELCloudHomeCoordinator(DataUpdateCoordinator[UserContext]):
                             exc_info=True,
                         )
 
+        # Fetch error start time when a unit enters error state.
+        # One errorlog call per unit per error episode (retried on the next
+        # poll if the fetch fails); cleared when the error resolves.
+        await self._update_error_started(context)
+
         # Update caches for O(1) lookups
         self._rebuild_caches(context)
         return context
+
+    async def _update_error_started(self, context: UserContext) -> None:
+        """Populate error_started on units currently in error state."""
+        for building in context.buildings:
+            units: list[tuple[AirToAirUnit | AirToWaterUnit, Any]] = [
+                *(
+                    (u, self.client.ata.get_error_log)
+                    for u in building.air_to_air_units
+                ),
+                *(
+                    (u, self.client.atw.get_error_log)
+                    for u in building.air_to_water_units
+                ),
+            ]
+            for unit, get_error_log in units:
+                if not unit.is_in_error:
+                    self._error_started.pop(unit.id, None)
+                    continue
+
+                if unit.id not in self._error_started:
+                    try:
+                        error_log = await get_error_log(unit.id)
+                        started = parse_active_error_start(error_log)
+                        if started:
+                            self._error_started[unit.id] = started
+                    except Exception:
+                        # Nice-to-have data: keep the update alive, retry next poll
+                        _LOGGER.debug(
+                            "Failed to fetch error log for %s",
+                            unit.name,
+                            exc_info=True,
+                        )
+
+                unit.error_started = self._error_started.get(unit.id)
 
     def _rebuild_caches(self, context: UserContext) -> None:
         """Rebuild lookup caches from context data."""

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from .const_ata import (
     API_CONTROL_UNIT,
+    API_ERROR_LOG,
     FAN_SPEEDS,
     OPERATION_MODES,
     TEMP_MAX_HEAT,
@@ -255,3 +256,22 @@ class ATAControlClient:
             API_CONTROL_UNIT.format(unit_id=unit_id),
             json=payload,
         )
+
+    async def get_error_log(self, unit_id: str) -> list[dict[str, Any]]:
+        """
+        Get error history for a device.
+
+        Returns an empty list when the device has no recorded errors.
+
+        Args:
+            unit_id: Device ID (UUID)
+
+        Raises:
+            AuthenticationError: If not authenticated
+            ApiError: If API request fails
+        """
+        response = await self._client._api_request(
+            "GET",
+            API_ERROR_LOG.format(unit_id=unit_id),
+        )
+        return response if isinstance(response, list) else []

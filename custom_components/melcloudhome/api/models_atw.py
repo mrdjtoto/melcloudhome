@@ -194,6 +194,9 @@ class AirToWaterUnit:
     energy_produced: float | None = None  # kWh (cumulative)
     cop: float | None = None  # Coefficient of Performance (produced/consumed)
 
+    # Active error start time (set by coordinator via errorlog API)
+    error_started: str | None = None  # ISO timestamp
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "AirToWaterUnit":
         """Create from API response dict.

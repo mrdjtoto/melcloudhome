@@ -45,6 +45,36 @@ def parse_float(value: str | float | None) -> float | None:
         return None
 
 
+def parse_active_error_start(response: object) -> str | None:
+    """Extract the start timestamp of the currently active error, if any.
+
+    The errorlog endpoint returns an array of error entries. Field names
+    differ between captures: ATA docs show {"errorCode", "from", "to"},
+    ATW docs show {"errorCode", "timestamp", "clearedTimestamp"}. An entry
+    is active when its cleared/end field is null.
+
+    Args:
+        response: Raw errorlog response (expected: list of dicts)
+
+    Returns:
+        ISO timestamp string of the most recent active error, or None
+    """
+    if not isinstance(response, list):
+        return None
+
+    active_starts = []
+    for entry in response:
+        if not isinstance(entry, dict):
+            continue
+        started = entry.get("from") or entry.get("timestamp")
+        cleared = entry.get("to") or entry.get("clearedTimestamp")
+        if started and not cleared:
+            active_starts.append(str(started))
+
+    # ISO timestamps sort lexicographically
+    return max(active_starts) if active_starts else None
+
+
 def parse_int(value: str | int | None) -> int | None:
     """Parse int from API string value.
 

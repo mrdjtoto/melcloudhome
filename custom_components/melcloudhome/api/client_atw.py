@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from .const_atw import (
     API_ATW_CONTROL_UNIT,
+    API_ATW_ERROR_LOG,
     ATW_OPERATION_MODES_ZONE,
     ATW_TEMP_MAX_DHW,
     ATW_TEMP_MAX_ZONE,
@@ -336,3 +337,22 @@ class ATWControlClient:
         )
 
         return await self._client._api_request("GET", endpoint, params=params)
+
+    async def get_error_log(self, unit_id: str) -> list[dict[str, Any]]:
+        """
+        Get error history for a device.
+
+        Returns an empty list when the device has no recorded errors.
+
+        Args:
+            unit_id: Device ID (UUID)
+
+        Raises:
+            AuthenticationError: If not authenticated
+            ApiError: If API request fails
+        """
+        response = await self._client._api_request(
+            "GET",
+            API_ATW_ERROR_LOG.format(unit_id=unit_id),
+        )
+        return response if isinstance(response, list) else []

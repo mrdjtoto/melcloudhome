@@ -7,6 +7,8 @@ Reference: docs/testing-best-practices.md
 Run with: make test-integration
 """
 
+from unittest.mock import AsyncMock
+
 import pytest
 from homeassistant.const import STATE_OFF, STATE_ON
 from homeassistant.core import HomeAssistant
@@ -87,6 +89,35 @@ async def test_atw_error_state_exposes_error_code(hass: HomeAssistant) -> None:
     state = hass.states.get("binary_sensor.melcloudhome_0efc_9abc_error_state")
     assert state.state == STATE_ON
     assert state.attributes["error_code"] == "E4"
+
+
+@pytest.mark.asyncio
+async def test_atw_error_state_exposes_error_since(hass: HomeAssistant) -> None:
+    """Test that error_since is fetched from the errorlog when in error."""
+    mock_unit = create_mock_atw_unit(is_in_error=True, error_code="E4")
+    mock_context = create_mock_atw_user_context(
+        [create_mock_atw_building(units=[mock_unit])]
+    )
+
+    def configure_client(mock_client) -> None:
+        mock_client.atw.get_error_log = AsyncMock(
+            return_value=[
+                {
+                    "timestamp": "2026-01-01T06:02:29Z",
+                    "errorCode": "E4",
+                    "errorReason": None,
+                    "clearedTimestamp": None,
+                }
+            ]
+        )
+
+    await setup_atw_integration_custom(
+        hass, mock_context, configure_client=configure_client
+    )
+
+    state = hass.states.get("binary_sensor.melcloudhome_0efc_9abc_error_state")
+    assert state.state == STATE_ON
+    assert state.attributes["error_since"] == "2026-01-01T06:02:29Z"
 
 
 @pytest.mark.asyncio

@@ -41,6 +41,7 @@ For each air conditioning unit, the following entities are created:
 
 - **Error State**: `binary_sensor.melcloudhome_{short_id}_error_state`
   - Attribute `error_code`: device error code (e.g. `E6`), `null` when no error
+  - Attribute `error_since`: start timestamp of the active error (from errorlog API), `null` when no error
 - **Connection**: `binary_sensor.melcloudhome_{short_id}_connection_state`
 
 ### ATA Control Options
@@ -185,6 +186,7 @@ For each heat pump system, the following entities are created:
 
 - **Error State**: `binary_sensor.melcloudhome_{short_id}_error_state`
   - Attribute `error_code`: device error code (e.g. `E4`), `null` when no error
+  - Attribute `error_since`: start timestamp of the active error (from errorlog API), `null` when no error
 - **Connection**: `binary_sensor.melcloudhome_{short_id}_connection_state`
 - **Forced DHW Active**: `binary_sensor.melcloudhome_{short_id}_forced_dhw_active`
 

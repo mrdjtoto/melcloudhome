@@ -9,6 +9,7 @@ API_FIELD_AIR_TO_WATER_UNITS = "airToWaterUnits"
 
 # API Endpoints - ATW
 API_ATW_CONTROL_UNIT = "/monitor/atwunit/{unit_id}"
+API_ATW_ERROR_LOG = "/monitor/atwunit/{unit_id}/errorlog"
 
 # Operation Modes - Zone Control (Control API - Strings)
 # These determine HOW the zone is heated or cooled
@@ -56,6 +57,7 @@ ATW_TEMP_MAX_DHW = 60.0  # DHW tank maximum
 
 __all__ = [
     "API_ATW_CONTROL_UNIT",
+    "API_ATW_ERROR_LOG",
     "API_FIELD_AIR_TO_WATER_UNITS",
     "ATW_MODE_COOL_FLOW_TEMP",
     "ATW_MODE_COOL_ROOM_TEMP",

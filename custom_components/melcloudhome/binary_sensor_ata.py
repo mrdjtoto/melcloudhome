@@ -46,7 +46,10 @@ ATA_BINARY_SENSOR_TYPES: tuple[ATABinarySensorEntityDescription, ...] = (
         translation_key="error_state",
         device_class=BinarySensorDeviceClass.PROBLEM,
         value_fn=lambda unit: unit.is_in_error,
-        attributes_fn=lambda unit: {"error_code": unit.error_code},
+        attributes_fn=lambda unit: {
+            "error_code": unit.error_code,
+            "error_since": unit.error_started,
+        },
     ),
     # Connection state - indicates if device is connected and responding
     # This will be handled differently as it depends on coordinator status

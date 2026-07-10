@@ -5,6 +5,7 @@ API_FIELD_AIR_TO_AIR_UNITS = "airToAirUnits"
 
 # API Endpoints - ATA
 API_CONTROL_UNIT = "/monitor/ataunit/{unit_id}"
+API_ERROR_LOG = "/monitor/ataunit/{unit_id}/errorlog"
 
 # Operation Modes (Control API - Strings)
 # CRITICAL: AUTO mode is "Automatic" NOT "Auto"!
@@ -94,6 +95,7 @@ TEMP_MIN_COOL_DRY = 16.0
 
 __all__ = [
     "API_CONTROL_UNIT",
+    "API_ERROR_LOG",
     "API_FIELD_AIR_TO_AIR_UNITS",
     "FAN_SPEEDS",
     "FAN_SPEED_NUMERIC_TO_WORD",

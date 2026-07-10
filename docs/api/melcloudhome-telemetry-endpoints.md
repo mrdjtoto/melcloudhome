@@ -17,11 +17,12 @@ This is a **complete API reference** documenting all read-only (GET) telemetry a
 **Currently Implemented:**
 - Energy consumption telemetry (Section 3) - Used for energy monitoring sensors in ATA devices
 - WiFi RSSI for ATA devices (sourced from UserContext, not telemetry polling endpoint)
+- Error log endpoint (Section 4) - Fetched when a device enters error state; start
+  timestamp exposed as `error_since` attribute on `error_state` binary sensors
 
 **Reference Only (Not Implemented):**
 - Actual telemetry data polling (Section 1) - Flow/return temps for ATW, RSSI via polling endpoint
-- Operation mode history (Section 4) - Historical operation tracking
-- Error log endpoint (Section 2) - Device error history
+- Operation mode history (Section 2) - Historical operation tracking
 - Report types (Section 5) - Historical reporting features
 
 **Why not implemented?**
@@ -226,11 +227,16 @@ GET /telemetry/telemetry/energy/0efce33f-5847-4042-88eb-aaf3ff6a76db?from=2025-1
 
 ## Diagnostic Endpoints
 
-### 4. Error Log 📋 (Reference Only)
+### 4. Error Log ✅ (Implemented)
 
-**GET** `/monitor/ataunit/{unit_id}/errorlog`
+**GET** `/monitor/ataunit/{unit_id}/errorlog` (ATA)
+**GET** `/monitor/atwunit/{unit_id}/errorlog` (ATW)
 
 Retrieves error history for the specified unit.
+
+> **✅ Implementation:** Fetched by the coordinator when a device enters error
+> state (one call per error episode). The active error's start timestamp is
+> exposed as the `error_since` attribute on the `error_state` binary sensor.
 
 **Query Parameters:** None
 

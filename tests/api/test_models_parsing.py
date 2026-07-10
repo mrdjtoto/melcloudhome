@@ -11,6 +11,7 @@ Avoids theatre: Only tests non-trivial logic with real edge cases.
 
 from custom_components.melcloudhome.api.models_ata import AirToAirUnit
 from custom_components.melcloudhome.api.parsing import (
+    parse_active_error_start,
     parse_bool,
     parse_int,
 )
@@ -93,6 +94,62 @@ class TestBooleanParsing:
             }
             unit = AirToAirUnit.from_dict(data)
             assert unit.power is False, f"Failed for value: {value}"
+
+
+class TestActiveErrorStartParsing:
+    """Test parse_active_error_start against both documented errorlog shapes."""
+
+    def test_empty_log_returns_none(self) -> None:
+        """Test that an empty errorlog (no errors ever) returns None."""
+        assert parse_active_error_start([]) is None
+
+    def test_non_list_response_returns_none(self) -> None:
+        """Test that unexpected response shapes are handled gracefully."""
+        assert parse_active_error_start(None) is None
+        assert parse_active_error_start({"error": "unexpected"}) is None
+
+    def test_ata_shape_active_error(self) -> None:
+        """Test ATA-documented shape: from/to fields, to=null when active."""
+        log = [
+            {"errorCode": "E6", "from": "2026-07-01T08:00:00Z", "to": None},
+        ]
+        assert parse_active_error_start(log) == "2026-07-01T08:00:00Z"
+
+    def test_atw_shape_active_error(self) -> None:
+        """Test ATW-documented shape: timestamp/clearedTimestamp fields."""
+        log = [
+            {
+                "timestamp": "2026-01-01T06:02:29Z",
+                "errorCode": "E4",
+                "errorReason": None,
+                "clearedTimestamp": None,
+            },
+        ]
+        assert parse_active_error_start(log) == "2026-01-01T06:02:29Z"
+
+    def test_cleared_errors_ignored(self) -> None:
+        """Test that cleared errors do not produce a start timestamp."""
+        log = [
+            {
+                "errorCode": "E6",
+                "from": "2026-07-01T08:00:00Z",
+                "to": "2026-07-01T09:00:00Z",
+            },
+            {
+                "timestamp": "2026-01-01T06:02:29Z",
+                "errorCode": "E4",
+                "clearedTimestamp": "2026-01-01T07:00:00Z",
+            },
+        ]
+        assert parse_active_error_start(log) is None
+
+    def test_most_recent_active_error_wins(self) -> None:
+        """Test that the latest active error start is returned."""
+        log = [
+            {"errorCode": "E1", "from": "2026-07-01T08:00:00Z", "to": None},
+            {"errorCode": "E2", "from": "2026-07-02T10:00:00Z", "to": None},
+        ]
+        assert parse_active_error_start(log) == "2026-07-02T10:00:00Z"
 
 
 class TestErrorCodeParsing:

@@ -101,6 +101,8 @@ class AirToAirUnit:
     # Outdoor temperature monitoring (set by coordinator via trendsummary API)
     outdoor_temperature: float | None = None  # °C
     has_outdoor_temp_sensor: bool = False  # Runtime discovery flag
+    # Active error start time (set by coordinator via errorlog API)
+    error_started: str | None = None  # ISO timestamp
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "AirToAirUnit":

@@ -81,6 +81,49 @@ async def test_error_state_sensor_exposes_error_code(hass: HomeAssistant) -> Non
 
 
 @pytest.mark.asyncio
+async def test_error_state_sensor_exposes_error_since(hass: HomeAssistant) -> None:
+    """Test that error_since is fetched from the errorlog when in error."""
+    unit_with_error = create_mock_ata_unit(is_in_error=True, error_code="E6")
+    mock_context = create_mock_ata_user_context(
+        [create_mock_ata_building(units=[unit_with_error])]
+    )
+
+    def configure_client(mock_client) -> None:
+        mock_client.ata.get_error_log = AsyncMock(
+            return_value=[
+                {"errorCode": "E6", "from": "2026-07-01T08:00:00Z", "to": None}
+            ]
+        )
+
+    await setup_ata_integration_custom(
+        hass, mock_context, configure_client=configure_client
+    )
+
+    error_state = hass.states.get("binary_sensor.melcloudhome_a1b2_9abc_error_state")
+    assert error_state.state == STATE_ON
+    assert error_state.attributes["error_since"] == "2026-07-01T08:00:00Z"
+
+
+@pytest.mark.asyncio
+async def test_error_state_sensor_error_since_none_when_no_error(
+    hass: HomeAssistant,
+) -> None:
+    """Test that error_since is None (and errorlog not called) without errors."""
+    mock_context = create_mock_ata_user_context()
+
+    def configure_client(mock_client) -> None:
+        mock_client.ata.get_error_log = AsyncMock(return_value=[])
+
+    _, mock_client = await setup_ata_integration_custom(
+        hass, mock_context, configure_client=configure_client
+    )
+
+    error_state = hass.states.get("binary_sensor.melcloudhome_a1b2_9abc_error_state")
+    assert error_state.attributes["error_since"] is None
+    assert mock_client.ata.get_error_log.call_count == 0
+
+
+@pytest.mark.asyncio
 async def test_error_state_sensor_error_code_none_when_no_error(
     hass: HomeAssistant,
 ) -> None:

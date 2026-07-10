@@ -274,6 +274,14 @@ class MockMELCloudServer:
             "/monitor/atwunit/{unit_id}", self.handle_atw_control
         )
 
+        # Error log endpoints (mobile BFF paths)
+        ata_errorlog_route = app.router.add_get(
+            "/monitor/ataunit/{unit_id}/errorlog", self.handle_error_log
+        )
+        atw_errorlog_route = app.router.add_get(
+            "/monitor/atwunit/{unit_id}/errorlog", self.handle_error_log
+        )
+
         # Schedule endpoints (mobile BFF paths)
         schedule_get = app.router.add_get(
             "/monitor/atwcloudschedule/{unit_id}", self.handle_schedule
@@ -315,6 +323,8 @@ class MockMELCloudServer:
             schedule_post,
             schedule_enabled_get,
             schedule_enabled_put,
+            ata_errorlog_route,
+            atw_errorlog_route,
             telemetry_route,
             energy_route,
             trendsummary_route,
@@ -530,6 +540,21 @@ class MockMELCloudServer:
             content_type="text/plain",
             charset="utf-8",
         )
+
+    async def handle_error_log(self, request: web.Request) -> web.Response:
+        """GET /monitor/{ata,atw}unit/{unit_id}/errorlog - Device error history.
+
+        Real API returns an array of error entries (empty when no errors).
+        Entries include errorCode plus start/cleared timestamps.
+        """
+        state = self.ata_states.get(
+            request.match_info["unit_id"]
+        ) or self.atw_states.get(request.match_info["unit_id"])
+        if state is None:
+            return web.json_response([], status=404)
+
+        entries = state.get("error_log", [])
+        return web.json_response(entries)
 
     async def handle_ata_control(self, request: web.Request) -> web.Response:
         """PUT /monitor/ataunit/{unit_id} - Control ATA device.
